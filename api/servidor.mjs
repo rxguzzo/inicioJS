@@ -5,26 +5,28 @@ const obras = [
   { id: 2, nome: "Obra Ana", etapa: "Medição" },
 ];
 
+// Função: um bloco de código com nome, que pode ser reutilizado.
+// Os parâmetros (res, status, dados) são as "lacunas" preenchidas a cada chamada.
+// A função foi criada para evitar repetição e poluição no código
+function responderJSON(res, status, dados) {
+  res.writeHead(status, { "Content-Type": "application/json" }); //monta o cabeçalho da resposta, o status "200 ou outro" e o json que eu vejo quando o terminal me retorna.
+  res.end(JSON.stringify(dados)); // end envia o texto e encerra a resposta o json stringiffy transforma o dado em JSON de js pra JSON
+  //Pense numa carta: writeHead é o envelope, stringify é escrever a carta, end é colocar no correio.
+}
+
 // roda a cada requisição que chega.
 const servidor = http.createServer((req, res) => {
   //req é a requisição (oq o cliente mandou) e dentro dela está o methodo e a url //res é a resposta que vc monta de devolve.
   console.log(req.method, req.url); //mostra no terminal oq chegou. é o meu olho!
   if (req.method === "GET" && req.url === "/obras") {
-    res.writeHead(200, { "Content-Type": "application/json" }); //monta o cabeçalho da resposta, o status 200 e o json que eu vejo quando o terminal me retorna.
-    res.end(JSON.stringify(obras)); //converte o array JavaScript em texto JSON, porque pela rede só trafega texto. Depois o end envia esse texto e encerra a resposta.
-    //o return encerra a função logo depois de responder, para nada mais rodar
-    //Sem ele, ou sem um else, o código segue em frente e tenta responder duas vezes. Uma requisição só pode ter uma resposta.
+    responderJSON(res, 200, obras); //chamada da função
+
     return;
   } else if (req.url === "/obras" && req.method !== "GET") {
-    //define o status e os cabeçalhos
-    res.writeHead(405, { "Content-Type": "application/json" });
-    // end envia o texto e encerra a resposta o json stringiffy transforma o dado em JSON de js pra JSON
-    res.end(JSON.stringify({ erro: "Método errado" }));
+    responderJSON(res, 405, {erro: "Método inválido!"});
   } else {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ erro: "Página não encontrada" }));
+    responderJSON(res, 404, {erro: "Página não encontrada!"});
   }
-  //Pense numa carta: writeHead é o envelope, stringify é escrever a carta, end é colocar no correio.
 });
 
 servidor.listen(3000, () => {
