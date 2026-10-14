@@ -26,8 +26,8 @@ const servidor = http.createServer((req, res) => {
     //req.url é o obras/2 que chegou o .split gera [',', 'obras', '2'] o number transforma no número 2
     const id = Number(req.url.split("/")[2]);
     //validação -- o id precisa ser um numero inteiro e diferente de 0 para ser encontrado na matriz
-    
-    if (!Number.isInteger(id) || (id) <= 0) {
+
+    if (!Number.isInteger(id) || id <= 0) {
       return responderJSON(res, 400, { erro: "Id Inválido!" });
     }
 
@@ -41,6 +41,27 @@ const servidor = http.createServer((req, res) => {
 
     //retorno das obras
     return responderJSON(res, 200, obra);
+
+  } else if (req.method === "POST" && req.url === "/obras") {
+    let corpo = "";
+
+    req.on("data", (pedaco) => { 
+      corpo += pedaco;
+    });
+
+    // vai guardar o corpo já convertido em objeto
+    req.on("end", () => { // vai guardar o corpo já convertido em objeto
+      let dados;
+
+      try {
+        dados = JSON.parse(corpo); // texto → objeto
+      } catch (erro) {
+        return responderJSON(res, 400, {erro: "JSON Inválido!"});
+      }
+      //se o texto não for um JSON ele cai aqui ao invés de derrubar todo o servidor
+        console.log("Obra recebida: ", dados.nome);
+        return responderJSON(res, 201, { recebido: dados });
+    });
 
     //validações métodos e páginas inválidas.
   } else if (req.url === "/obras" && req.method !== "GET") {
