@@ -16,16 +16,37 @@ function responderJSON(res, status, dados) {
 
 // roda a cada requisição que chega.
 const servidor = http.createServer((req, res) => {
-  //req é a requisição (oq o cliente mandou) e dentro dela está o methodo e a url //res é a resposta que vc monta de devolve.
   console.log(req.method, req.url); //mostra no terminal oq chegou. é o meu olho!
+  //req é a requisição (oq o cliente mandou) e dentro dela está o methodo e a url //res é a resposta que vc monta de devolve.
   if (req.method === "GET" && req.url === "/obras") {
     responderJSON(res, 200, obras); //chamada da função
-
     return;
+  } else if (req.method === "GET" && req.url.startsWith("/obras/")) {
+    //STARTS with: Pergunta “a URL começa com /obras/?
+    //req.url é o obras/2 que chegou o .split gera [',', 'obras', '2'] o number transforma no número 2
+    const id = Number(req.url.split("/")[2]);
+    //validação -- o id precisa ser um numero inteiro e diferente de 0 para ser encontrado na matriz
+    
+    if (!Number.isInteger(id) || (id) <= 0) {
+      return responderJSON(res, 400, { erro: "Id Inválido!" });
+    }
+
+    //Para cada obra o da lista, ele pergunta “o.id é igual ao id pedido?” e devolve a primeira que bater, ou undefined se nenhuma bater.
+    const obra = obras.find((o) => o.id === id);
+
+    //validação -- não existe obra?
+    if (!obra) {
+      return responderJSON(res, 404, { erro: "Obra não encontrada!" });
+    }
+
+    //retorno das obras
+    return responderJSON(res, 200, obra);
+
+    //validações métodos e páginas inválidas.
   } else if (req.url === "/obras" && req.method !== "GET") {
-    responderJSON(res, 405, {erro: "Método inválido!"});
+    responderJSON(res, 405, { erro: "Método inválido!" });
   } else {
-    responderJSON(res, 404, {erro: "Página não encontrada!"});
+    responderJSON(res, 404, { erro: "Página não encontrada!" });
   }
 });
 
