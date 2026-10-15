@@ -41,26 +41,54 @@ const servidor = http.createServer((req, res) => {
 
     //retorno das obras
     return responderJSON(res, 200, obra);
-
   } else if (req.method === "POST" && req.url === "/obras") {
     let corpo = "";
 
-    req.on("data", (pedaco) => { 
+    req.on("data", (pedaco) => {
       corpo += pedaco;
     });
 
+    // ── PARTE 1: o texto é um JSON válido? ─────────────────────────
     // vai guardar o corpo já convertido em objeto
-    req.on("end", () => { // vai guardar o corpo já convertido em objeto
+    req.on("end", () => {
+      // vai guardar o corpo já convertido em objeto
       let dados;
 
       try {
         dados = JSON.parse(corpo); // texto → objeto
       } catch (erro) {
-        return responderJSON(res, 400, {erro: "JSON Inválido!"});
+        return responderJSON(res, 400, { erro: "JSON Inválido!" });
       }
-      //se o texto não for um JSON ele cai aqui ao invés de derrubar todo o servidor
-        console.log("Obra recebida: ", dados.nome);
-        return responderJSON(res, 201, { recebido: dados });
+
+      //PARTE 2: os campos obrigatórios vieram certos?
+      // Para cada campo: 1º "é texto?", 2º "está vazio?".
+      // Com o ||, se o 1º já falhar, o 2º nem roda (assim o .trim() nunca roda em undefined).
+      if (
+        typeof dados.nome !== "string" ||
+        dados.nome.trim() === "" ||
+        typeof dados.etapa !== "string" ||
+        dados.etapa.trim() === ""
+      ) {
+        return responderJSON(res, 400, {
+          erro: "Nome e Etapa são obrigatórios!",
+        });
+      }
+
+      // ── PARTE 3: criar e salvar ─────────────────────────────────────
+      // Math.max e não length: o length conta QUANTAS obras existem,
+      // não qual é o maior id. Depois de uma exclusão, os dois deixam de ser iguais.
+      const novoId = Math.max(...obras.map((o) => o.id)) + 1;
+
+      //4. Montar uma obra nova
+      const novaObra = { 
+        id: novoId, 
+        nome: dados.nome.trim(),
+        etapa: dados.etapa.trim(), }
+        ;
+
+      //5. Salvar na lista e responder // push: adiciona no fim da lista
+      obras.push(novaObra);
+      responderJSON(res, 201, novaObra); // 201 = criado, devolvendo a obra nova
     });
 
     //validações métodos e páginas inválidas.
