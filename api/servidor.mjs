@@ -107,7 +107,6 @@ const servidor = http.createServer((req, res) => {
 
     // findIndex: igual ao find, mas devolve a POSIÇÃO da obra no array
     // (0, 1, 2...) ou -1 se nenhuma bater
-
     const posicao = obras.findIndex((o) => o.id === id);
 
     //validação -- não existe obra?
@@ -121,6 +120,63 @@ const servidor = http.createServer((req, res) => {
     //204 = deu certo e não tem nada pra devolver
     res.writeHead(204);
     return res.end();
+  } else if (req.method === "PUT" && req.url.startsWith("/obras/")) {
+    //STARTS with: Pergunta “a URL começa com /obras/?
+    //req.url é o obras/2 que chegou o .split gera [',', 'obras', '2'] o number transforma no número 2
+    const id = Number(req.url.split("/")[2]);
+    //validação -- o id precisa ser um numero inteiro e diferente de 0 para ser encontrado na matriz
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return responderJSON(res, 400, { erro: "Id Inválido!" });
+    }
+
+    let corpo = "";
+
+    req.on("data", (pedaco) => {
+      corpo += pedaco;
+    });
+
+    // ── PARTE 1: o texto é um JSON válido? ─────────────────────────
+    // vai guardar o corpo já convertido em objeto
+    req.on("end", () => {
+      // vai guardar o corpo já convertido em objeto
+      let dados;
+
+      try {
+        dados = JSON.parse(corpo); // texto → objeto
+      } catch (erro) {
+        return responderJSON(res, 400, { erro: "JSON Inválido!" });
+      }
+
+      //PARTE 2: os campos obrigatórios vieram certos?
+      // Para cada campo: 1º "é texto?", 2º "está vazio?".
+      // Com o ||, se o 1º já falhar, o 2º nem roda (assim o .trim() nunca roda em undefined).
+      if (
+        typeof dados.nome !== "string" ||
+        dados.nome.trim() === "" ||
+        typeof dados.etapa !== "string" ||
+        dados.etapa.trim() === ""
+      ) {
+        return responderJSON(res, 400, {
+          erro: "Nome e Etapa são obrigatórios!",
+        });
+      }
+
+      // ── PARTE 3: encontrar a obra ─────────────────────────────────────
+      const acharObra = obras.findIndex((o) => o.id === id);
+
+      //validação -- não existe obra?
+      if (acharObra === -1) {
+        return responderJSON(res, 404, { erro: "Obra não encontrada!" });
+      }
+
+      //4. Editar a obra que JÁ está na lista, na posição encontrada
+      obras[acharObra].nome = dados.nome.trim();
+      obras[acharObra].etapa = dados.etapa.trim();
+
+      //5. Responder com a obra completa (com id)
+      responderJSON(res, 200, obras[acharObra]); // 200 = editado, devolvendo a obra editada
+    });
   } else {
     responderJSON(res, 404, { erro: "Página não encontrada!" });
   }
