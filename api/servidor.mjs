@@ -80,12 +80,11 @@ const servidor = http.createServer((req, res) => {
       const novoId = Math.max(...obras.map((o) => o.id)) + 1;
 
       //4. Montar uma obra nova
-      const novaObra = { 
-        id: novoId, 
+      const novaObra = {
+        id: novoId,
         nome: dados.nome.trim(),
-        etapa: dados.etapa.trim(), }
-        ;
-
+        etapa: dados.etapa.trim(),
+      };
       //5. Salvar na lista e responder // push: adiciona no fim da lista
       obras.push(novaObra);
       responderJSON(res, 201, novaObra); // 201 = criado, devolvendo a obra nova
@@ -94,6 +93,34 @@ const servidor = http.createServer((req, res) => {
     //validações métodos e páginas inválidas.
   } else if (req.url === "/obras" && req.method !== "GET") {
     responderJSON(res, 405, { erro: "Método inválido!" });
+
+    //MÉTODO DELETE
+  } else if (req.method === "DELETE" && req.url.startsWith("/obras/")) {
+    //STARTS with: Pergunta “a URL começa com /obras/?
+    //req.url é o obras/2 que chegou o .split gera [',', 'obras', '2'] o number transforma no número 2
+    const id = Number(req.url.split("/")[2]);
+    //validação -- o id precisa ser um numero inteiro e diferente de 0 para ser encontrado na matriz
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return responderJSON(res, 400, { erro: "Id Inválido!" });
+    }
+
+    // findIndex: igual ao find, mas devolve a POSIÇÃO da obra no array
+    // (0, 1, 2...) ou -1 se nenhuma bater
+
+    const posicao = obras.findIndex((o) => o.id === id);
+
+    //validação -- não existe obra?
+    if (posicao === -1) {
+      return responderJSON(res, 404, { erro: "Obra não encontrada!" });
+    }
+
+    //splice (posição, quantos): remove itens do array
+    obras.splice(posicao, 1);
+
+    //204 = deu certo e não tem nada pra devolver
+    res.writeHead(204);
+    return res.end();
   } else {
     responderJSON(res, 404, { erro: "Página não encontrada!" });
   }
