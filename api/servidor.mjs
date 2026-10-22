@@ -14,10 +14,28 @@ function responderJSON(res, status, dados) {
   //Pense numa carta: writeHead é o envelope, stringify é escrever a carta, end é colocar no correio.
 }
 
+process.loadEnvFile(); // carrega o .env da pasta onde o comando foi executado
+const API = process.env.API_KEY;
+
+//proteção contra implementação nos métodos sem api ou quando a a API não está definida no mesmo (forma B = mais utilizada nas empresas);
+if (!API) {
+  console.error("API não definida no servidor!");
+  process.exit(1); //encerra e termina com erro.
+}
 // roda a cada requisição que chega.
+//req é a requisição (oq o cliente mandou) e dentro dela está o methodo e a url //res é a resposta que vc monta de devolve.
 const servidor = http.createServer((req, res) => {
   console.log(req.method, req.url); //mostra no terminal oq chegou. é o meu olho!
-  //req é a requisição (oq o cliente mandou) e dentro dela está o methodo e a url //res é a resposta que vc monta de devolve.
+
+  //Segurança na API
+  //Qualquer método diferente de get que pode editar cai na condição de segurança.
+  if (req.method !== "GET") {
+    const chaveRecebida = req.headers["x-api-key"]; //recebe a chave de segurança
+    if (chaveRecebida !== API) {
+      // || chaveRecebida === undefined) forma A de proteger as alterações vinda sem chave api definida
+      return responderJSON(res, 401, { erro: "chave de API inválida!" }); //se a chave for diferente da instalada na
+    }
+  }
   if (req.method === "GET" && req.url === "/obras") {
     responderJSON(res, 200, obras); //chamada da função
     return;
@@ -115,9 +133,10 @@ const servidor = http.createServer((req, res) => {
     }
 
     //splice (posição, quantos): remove itens do array
+    //splice: altera o array original, ao contrário de map e filter, que criam um array novo.
     obras.splice(posicao, 1);
 
-    //204 = deu certo e não tem nada pra devolver
+    //204 = deu certo e não tem nada pra devolver, não precisa do responderJSON pq não retorna corpo.
     res.writeHead(204);
     return res.end();
   } else if (req.method === "PUT" && req.url.startsWith("/obras/")) {
