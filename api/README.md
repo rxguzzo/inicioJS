@@ -84,22 +84,23 @@ curl -i -X DELETE localhost:3000/obras/2 -H "x-api-key: sua-chave-secreta"
 
 ## 🧠 Decisões e aprendizados
 
-> ✍️ *Preencha com suas palavras — é exatamente o que um entrevistador vai perguntar.*
-
 **Por que `Math.max(...ids) + 1` e não `obras.length + 1` para gerar o id?**
-✍️ _____
+✍️ O `Math.max` sempre procura o maior id do array, já o `length` conta quantas obras existem. Depois de um DELETE, isso pode gerar **id duplicado**:
+- Apaga a obra 1 → sobra `[{ id: 2 }]`
+- `length + 1` = 1 + 1 = **2** → id repetido! ❌
+- `Math.max(2) + 1` = **3** ✅
 
 **Por que o DELETE responde 204 sem corpo, e não com `responderJSON`?**
-✍️ _____
+✍️ O 204 "No Content" não possui corpo de resposta: não há nada a devolver depois de apagar o item, e o `responderJSON` sempre envia um corpo JSON.
 
 **Por que `findIndex` no PUT/DELETE e `find` no GET?**
-✍️ _____
+✍️ O `find` retorna o item, mas o `findIndex` devolve a **posição** da obra no array. O PUT e o DELETE precisam da posição para editar (`obras[posicao]`) ou remover (`splice`) o item com o id correto.
 
 **Por que a API "falha fechada" quando a chave não existe? O que acontecia antes?**
-✍️ _____
+✍️ Antes, sem `API_KEY` definida no servidor, qualquer pessoa conseguia apagar os dados (`undefined !== undefined` dava `false` e a checagem passava). Agora, sem chave configurada, o servidor nem sobe e avisa que a chave não existe: na dúvida, bloqueia.
 
 **Por que construir com `node:http` puro em vez de usar Express?**
-✍️ _____
+✍️ Para entender como o Node e os frameworks trabalham por baixo do código. Agora sei o que o Express automatiza: ler o corpo, rotear e responder JSON.
 
 ---
 
