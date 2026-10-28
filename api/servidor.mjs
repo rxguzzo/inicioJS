@@ -1,5 +1,6 @@
 import http from "node:http";
 
+
 const obras = [
   { id: 1, nome: "Obra Renato", etapa: "Contramarco" },
   { id: 2, nome: "Obra Ana", etapa: "Medição" },
@@ -12,6 +13,21 @@ function responderJSON(res, status, dados) {
   res.writeHead(status, { "Content-Type": "application/json" }); //monta o cabeçalho da resposta, o status "200 ou outro" e o json que eu vejo quando o terminal me retorna.
   res.end(JSON.stringify(dados)); // end envia o texto e encerra a resposta o json stringiffy transforma o dado em JSON de js pra JSON
   //Pense numa carta: writeHead é o envelope, stringify é escrever a carta, end é colocar no correio.
+}
+
+// Função: um bloco de código com nome, que pode ser reutilizado.
+// As validações (dados === object(sem ser null), nome, etapa) precisam estar preenchidas corretamente.
+//typeof sempre devolve um texto ("object", "string", "number")
+//-> por isso dados !== null
+function validarObra(dados) {
+  return (
+    dados !== null &&
+    typeof dados === "object" &&
+    typeof dados.nome === "string" &&
+    dados.nome.trim() !== "" &&
+    typeof dados.etapa === "string" &&
+    dados.etapa.trim() !== ""
+  );
 }
 
 process.loadEnvFile(); // carrega o .env da pasta onde o comando foi executado
@@ -78,20 +94,12 @@ const servidor = http.createServer((req, res) => {
         return responderJSON(res, 400, { erro: "JSON Inválido!" });
       }
 
-      //PARTE 2: os campos obrigatórios vieram certos?
-      // Para cada campo: 1º "é texto?", 2º "está vazio?".
-      // Com o ||, se o 1º já falhar, o 2º nem roda (assim o .trim() nunca roda em undefined).
-      if (
-        typeof dados.nome !== "string" ||
-        dados.nome.trim() === "" ||
-        typeof dados.etapa !== "string" ||
-        dados.etapa.trim() === ""
-      ) {
+      //PARTE 2: os campos obrigatórios vieram certos? usa a função criada.
+      if (!validarObra(dados)) {
         return responderJSON(res, 400, {
           erro: "Nome e Etapa são obrigatórios!",
         });
       }
-
       // ── PARTE 3: criar e salvar ─────────────────────────────────────
       // Math.max e não length: o length conta QUANTAS obras existem,
       // não qual é o maior id. Depois de uma exclusão, os dois deixam de ser iguais.
@@ -170,12 +178,7 @@ const servidor = http.createServer((req, res) => {
       //PARTE 2: os campos obrigatórios vieram certos?
       // Para cada campo: 1º "é texto?", 2º "está vazio?".
       // Com o ||, se o 1º já falhar, o 2º nem roda (assim o .trim() nunca roda em undefined).
-      if (
-        typeof dados.nome !== "string" ||
-        dados.nome.trim() === "" ||
-        typeof dados.etapa !== "string" ||
-        dados.etapa.trim() === ""
-      ) {
+      if (!validarObra(dados)) {
         return responderJSON(res, 400, {
           erro: "Nome e Etapa são obrigatórios!",
         });
